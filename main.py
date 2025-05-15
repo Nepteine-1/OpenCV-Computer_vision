@@ -1,55 +1,46 @@
-import numpy as np
 import cv2 as cv
- 
-drawing = False # true if mouse is pressed
-mode = True # if True, draw rectangle. Press 'm' to toggle to curve
-ix,iy = -1,-1
- 
-def nothing(x):
-    pass
+import numpy as np
 
-# mouse callback function
-def draw_circle(event,x,y,flags,param):
-    global ix,iy,drawing,mode
- 
-    if event == cv.EVENT_LBUTTONDOWN:
-        drawing = True
-        ix,iy = x,y
- 
-    elif event == cv.EVENT_MOUSEMOVE:
-        if drawing == True:
-            if mode == True:
-                cv.rectangle(img,(ix,iy),(x,y),(cv.getTrackbarPos('B','image'),cv.getTrackbarPos('G','image'),cv.getTrackbarPos('R','image')),-1)
-            else:
-                cv.circle(img,(x,y),cv.getTrackbarPos('Radius','image'),(cv.getTrackbarPos('B','image'),cv.getTrackbarPos('G','image'),cv.getTrackbarPos('R','image')),-1)
- 
-    elif event == cv.EVENT_LBUTTONUP:
-        drawing = False
-        if mode == True:
-            cv.rectangle(img,(ix,iy),(x,y),(cv.getTrackbarPos('B','image'),cv.getTrackbarPos('G','image'),cv.getTrackbarPos('R','image')),-1)
-        else:
-            cv.circle(img,(x,y),cv.getTrackbarPos('Radius','image'),(cv.getTrackbarPos('B','image'),cv.getTrackbarPos('G','image'),cv.getTrackbarPos('R','image')),-1)
-
-
-img = np.zeros((512,512,3), np.uint8)
-cv.namedWindow('image')
-cv.setMouseCallback('image',draw_circle)
-
-cv.createTrackbar('R','image',0,255,nothing)
-
-
-cv.createTrackbar('Radius','image',5,45,nothing)
- 
-cv.createTrackbar('G','image',0,255,nothing)
-cv.createTrackbar('B','image',0,255,nothing)
- 
+cap = cv.VideoCapture(0)
 
 while(1):
-    cv.imshow('image',img)
-    k = cv.waitKey(1) & 0xFF
-    if k == ord('m'):
-        mode = not mode
-    elif k == 27:
+
+    # Take each frame
+    _, frame = cap.read()
+
+    # Convert BGR to HSV
+    hsv = cv.cvtColor(frame, cv.COLOR_BGR2HSV)
+
+    # define range of blue color in HSV
+    lower_blue = np.array([90, 50,50])
+    upper_blue = np.array([130,255,255])
+
+    lower_green = np.array([40, 50,50])
+    upper_green = np.array([80,255,255])
+
+    lower_red = np.array([0, 125,125])
+    upper_red = np.array([20,255,255])
+
+    # Threshold the HSV image to get only blue colors
+    mask1 = cv.inRange(hsv, lower_blue, upper_blue)
+    cv.imshow('blue_only', mask1)
+    
+    mask2 = cv.inRange(hsv, lower_green, upper_green)
+    cv.imshow('green_only', mask2)
+
+    mask3 = cv.inRange(hsv, lower_red, upper_red)
+    cv.imshow('red_only', mask3)
+
+    final_mask = cv.bitwise_or(mask1,mask2)
+    final_mask = cv.bitwise_or(final_mask,mask3)
+
+    # Bitwise-AND mask and original image
+    res = cv.bitwise_and(frame,frame, mask= final_mask)
+
+    cv.imshow('camera',frame)
+    cv.imshow('result',res)
+    k = cv.waitKey(5) & 0xFF
+    if k == 27:
         break
 
 cv.destroyAllWindows()
