@@ -1,21 +1,11 @@
 import cv2 as cv
-import numpy as np
-from matplotlib import pyplot as plt
- 
-def setCanny(x):
-    global edges
-    edges = cv.Canny(img,cv.getTrackbarPos('Gradient 1','image'),cv.getTrackbarPos('Gradient 2','image'))
-    cv.imshow('image', edges)
 
-img = cv.imread('wallpaper.jpg', cv.IMREAD_GRAYSCALE)
-assert img is not None, "file could not be read, check with os.path.exists()"
+im = cv.imread('logo.jpg')
+imgray = cv.cvtColor(im, cv.COLOR_BGR2GRAY)
+ret, thresh = cv.threshold(imgray,200,255,0)
+cv.imshow('rte', thresh)
+contours, hier = cv.findContours(thresh, cv.RETR_TREE, cv.CHAIN_APPROX_SIMPLE)
+cv.drawContours(im, contours, -1, (0,255,0), 3)
 
-cv.namedWindow('image')
-edges = cv.Canny(img,100,200)
-
-cv.createTrackbar('Gradient 1', 'image', 0,300, setCanny)
-cv.createTrackbar('Gradient 2', 'image', 0,300, setCanny)
-
-while 1:
-    cv.imshow('image', edges)
-    cv.waitKey(0)
+cv.imshow('test',im)
+cv.waitKey(0)
